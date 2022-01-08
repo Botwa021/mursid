@@ -6,6 +6,7 @@ let { webp2png } = require('../lib/webp2mp4')
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   let stiker = false
   try {
+    await m.reply('Masih Loading Om...\n Orang sabar disayang Janda:)')
     let q = m.quoted ? m.quoted : m
     let mime = (q.msg || q).mimetype || ''
     if (/webp|image|video/g.test(mime)) {
