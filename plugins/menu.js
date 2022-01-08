@@ -3,7 +3,6 @@ let path = require('path')
 let levelling = require('../lib/levelling')
 let tags = {
   'main': 'Main',
-  'rpg': 'Epic RPG',
   'game': 'Game',
   'xp': 'Exp & Limit',
   'sticker': 'Sticker',
@@ -32,16 +31,27 @@ let tags = {
 const defaultMenu = {
   before: `
 ╭─「 %me 」
-│ %ucapan, %name!
+│ Hai, %name!
 │
-│ Tanggal: *%week %weton, %date*
-│ Tanggal Islam: *%dateIslamic*
-│ Waktu: *%time*
-│
-│ Uptime: *%uptime (%muptime)*
-│ Database: %rtotalreg of %totalreg
-│ Github:
-│ %github
+│ *Limit*: %limit
+│ *Role*: %role
+│ *Level*: %level
+│ *Exp*: %exp
+│ *Tanggal*: %week, %date
+│ *Waktu*: %time
+│ *Uptime*: %uptime
+│ *User*: %rtotalreg dari %totalreg
+╰────
+╭─「 *Group* 」
+https://chat.whatsapp.com/Chp3CCteNidDUYTq1YeZBL
+╰────
+
+╭─「 *Group Bot* 」
+https://chat.whatsapp.com/LPFQ2X1cnihB0fb8F8cZau
+╰───
+
+╭─「 *Github* 」
+https://github.com/Nurutomo/wabot-aq
 ╰────
 %readmore`.trimStart(),
   header: '╭─「 %category 」',
@@ -55,6 +65,8 @@ ${'```%npmdesc```'}
 let handler = async (m, { conn, usedPrefix: _p }) => {
   try {
     let package = JSON.parse(await fs.promises.readFile(path.join(__dirname, '../package.json')).catch(_ => '{}'))
+    let { exp, limit, level, role } = global.db.data.users[m.sender]
+    let { min, xp, max } = levelling.xpRange(level, global.multiplier)
     let name = conn.getName(m.sender)
     let d = new Date(new Date + 3600000)
     let locale = 'id'
@@ -90,8 +102,8 @@ let handler = async (m, { conn, usedPrefix: _p }) => {
     }
     let muptime = clockString(_muptime)
     let uptime = clockString(_uptime)
-    let totalreg = Object.keys(global.DATABASE._data.users).length
-    let rtotalreg = Object.values(global.DATABASE._data.users).filter(user => user.registered == true).length
+    let totalreg = Object.keys(global.db.data.users).length
+    let rtotalreg = Object.values(global.db.data.users).filter(user => user.registered == true).length
     let help = Object.values(global.plugins).filter(plugin => !plugin.disabled).map(plugin => {
       return {
         help: Array.isArray(plugin.tags) ? plugin.help : [plugin.help],
@@ -134,17 +146,21 @@ let handler = async (m, { conn, usedPrefix: _p }) => {
       '%': '%',
       p: _p, uptime, muptime,
       me: conn.user.name,
-      ucapan: ucapan(),
       npmname: package.name,
       npmdesc: package.description,
       version: package.version,
+      exp: exp - min,
+      maxexp: xp,
+      totalexp: exp,
+      xp4levelup: max - exp,
       github: package.homepage ? package.homepage.url || package.homepage : '[unknown github url]',
-      name, weton, week, date, dateIslamic, time, totalreg, rtotalreg,
+      level, limit, name, weton, week, date, dateIslamic, time, totalreg, rtotalreg, role,
       readmore: readMore
     }
     text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
-    let pp = await conn.getProfilePicture(conn.user.jid).catch(_ => path.join(__dirname, '../src/avatar_contact.png'))
-    conn.sendFile(m.chat, pp, 'menu.jpg', text.trim(), m).catch(_ => conn.reply(m.chat, text.trim(), m))
+await conn.fakeReply(m.chat, 'Loading...', '0@s.whatsapp.net', 'BY MURSID (+6288233832771)', 'status@broadcast')
+    conn.reply(m.chat, text.trim(), m)
+    conn.sendFile(m.chat, './folder/suara.mp3.mp3', 'song.mp3, '', m, false, true { mimetype :' audio/mp4'})
   } catch (e) {
     conn.reply(m.chat, 'Maaf, menu sedang error', m)
     throw e
@@ -175,21 +191,4 @@ function clockString(ms) {
   let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
   let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
   return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':')
-}
-function ucapan() {
-  const time = (new Date().getUTCHours() + 7) % 24
-  res = "Woi. Pagi"
-  if (time >= 4) {
-    res = "Selamat Pagi"
-  }
-  if (time >= 12) {
-    res = "Selamat Siang"
-  }
-  if (time >= 15) {
-    res = "Selamat Sore"
-  }
-  if (time >= 19) {
-    res = "Selamat Malam"
-  }
-  return res
 }
